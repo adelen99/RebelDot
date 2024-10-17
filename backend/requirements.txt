@@ -1,0 +1,5 @@
+connection==2021.7.20
+db==0.1.1
+fastapi==0.115.2
+Flask==3.0.3
+Flask_Cors==5.0.0
