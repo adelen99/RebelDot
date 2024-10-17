@@ -10,9 +10,13 @@ def translate_audio():
         return jsonify({"error": "No file part in the request"}), 400
 
     file = request.files['file']
+    source_lang = request.form.get('source_lang', 'en')
+    target_lang = request.form.get('target_lang', 'ro')
+
     audio_file_path = Path("uploaded_audio.mp3")
     file.save(audio_file_path)
     text = speach_to_text(audio_file_path)
+    #TODO: Translate the text from source_lang to target_lang
     speech_file_path = text_to_speach(text)
 
     # Return the translated audio file to the user
