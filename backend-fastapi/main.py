@@ -16,9 +16,9 @@ model = ChatOpenAI(model="gpt-4o")
 
 # Define the request body model
 class TranslationRequest(BaseModel):
-    message: str
-    source_language: str
-    target_language: str
+    text: str
+    source_lang: str
+    target_lang: str
 
 
 @app.post("/translate/")
@@ -27,7 +27,7 @@ async def translate(request: TranslationRequest):
     messages = [
         SystemMessage(content="Act like an expert in translation"),
         HumanMessage(
-            content=f"Translate the following message from {request.source_language} to {request.target_language} and provide only the translation: {request.message}"
+            content=f"Translate the following message from {request.source_lang} to {request.target_lang} and provide only the translation: {request.text}"
         ),
     ]
 
