@@ -12,21 +12,20 @@ import { db } from "../../lib/firebase";
 import { useChatStore } from "../../lib/chatStore";
 import { useUserStore } from "../../lib/userStore";
 import upload from "../../lib/upload";
+import axios from "axios"; // Import axios
 
 export default function Chat() {
   const [open, setOpen] = useState(false);
   const [chat, setChat] = useState();
   const [text, setText] = useState("");
-  const [img, setImg] = useState({
-    file: null,
-    url: "",
-  });
+  const [img, setImg] = useState({ file: null, url: "" });
 
   const { chatId, user, isCurrentUserBlocked, isReceiverBlocked } =
     useChatStore();
   const { currentUser } = useUserStore();
 
   const endRef = useRef(null);
+
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat?.messages]);
@@ -35,16 +34,14 @@ export default function Chat() {
     const unSub = onSnapshot(doc(db, "chats", chatId), (res) => {
       setChat(res.data());
     });
-    return () => {
-      unSub();
-    };
+    return () => unSub();
   }, [chatId]);
-  console.log(chat);
 
   const handleEmoji = (e) => {
-    setText(text + e.emoji);
+    setText((prevText) => prevText + e.emoji);
     setOpen(false);
   };
+
   const handleImage = (e) => {
     if (e.target.files[0]) {
       setImg({
@@ -62,14 +59,42 @@ export default function Chat() {
       if (img.file) {
         imgUrl = await upload(img.file);
       }
+
+      // Prepare message payload
+      const messagePayload = {
+        senderId: currentUser.id,
+        receiverId: user.id,
+        text: text, // Original text
+        source_lang: currentUser.language, // User's language
+        target_lang: user.language, // Receiver's language
+        ...(imgUrl && { img: imgUrl }),
+        createdAt: new Date(),
+      };
+
+      // Send the message to the backend for translation
+      const response = await axios.post(
+        "http://127.0.0.1:5000/translate",
+        messagePayload
+      );
+      const translatedText = response.data.translated_text; // Extract the translated text
+
+      // Construct message object for Firestore
+      const messageForFirestore = {
+        senderId: currentUser.id,
+        receiverId: user.id,
+        text:
+          currentUser.id === messagePayload.senderId ? text : translatedText, // Original for sender, translated for receiver
+        translatedText:
+          currentUser.id === messagePayload.senderId ? translatedText : text, // Store translated text as well for reference
+        img: imgUrl || null, // Include image if it exists
+        createdAt: new Date(),
+      };
+
+      // Update Firestore with the new message
       await updateDoc(doc(db, "chats", chatId), {
-        messages: arrayUnion({
-          senderId: currentUser.id,
-          text,
-          createdAt: new Date(),
-          ...(imgUrl && { img: imgUrl }),
-        }),
+        messages: arrayUnion(messageForFirestore),
       });
+
       const userIDs = [currentUser.id, user.id];
 
       userIDs.forEach(async (id) => {
@@ -81,27 +106,29 @@ export default function Chat() {
           const chatIndex = userChatsData.chats.findIndex(
             (c) => c.chatId === chatId
           );
-          userChatsData.chats[chatIndex].lastMessage = text;
-          userChatsData.chats[chatIndex].isSeen =
-            id === currentUser.id ? true : false;
-          userChatsData.chats[chatIndex].updatedAt = Date.now();
+          if (chatIndex !== -1) {
+            userChatsData.chats[chatIndex].lastMessage =
+              currentUser.id === messagePayload.senderId
+                ? text
+                : translatedText; // Last message for chat overview
+            userChatsData.chats[chatIndex].isSeen = id === currentUser.id;
+            userChatsData.chats[chatIndex].updatedAt = Date.now();
 
-          await updateDoc(userChatsRef, {
-            chats: userChatsData.chats,
-          });
+            await updateDoc(userChatsRef, {
+              chats: userChatsData.chats,
+            });
+          }
         }
       });
     } catch (error) {
-      console.log(error);
+      console.error("Error sending message:", error);
+    } finally {
+      // Reset image and text after sending the message
+      setImg({ file: null, url: "" });
+      setText("");
     }
-    setImg({
-      file: null,
-      url: "",
-    });
-    setText("");
   };
 
-  console.log(text);
   return (
     <div className='chat'>
       <div className='top'>
@@ -127,8 +154,13 @@ export default function Chat() {
             key={message?.createdAt}>
             <div className='texts'>
               {message.img && <img src={message.img} alt='messageImage' />}
-              <p>{message.text}</p>
-              {/* <span>1min ago</span> */}
+              <p>
+                {
+                  message.senderId === currentUser.id
+                    ? message.text // Display original text for the sender
+                    : message.translatedText // Display translated text for the receiver
+                }
+              </p>
             </div>
           </div>
         ))}

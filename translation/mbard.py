@@ -16,7 +16,7 @@ class MBartTranslator:
         """
         try:
             # Load model and tokenizer
-            tokenizer = MBart50TokenizerFast.from_pretrained(self.model_name)
+            tokenizer = MBart50Tokenizer.from_pretrained(self.model_name)
             model = MBartForConditionalGeneration.from_pretrained(self.model_name)
             logger.info("Successfully loaded mBART model and tokenizer.")
             return model, tokenizer

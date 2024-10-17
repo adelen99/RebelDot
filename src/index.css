@@ -27,12 +27,6 @@ body {
   position: relative; /* Optional, for layout control */
 }
 
-/* Optional: Custom scrollbar styling for WebKit browsers */
-.container::-webkit-scrollbar {
-  display: none; /* Hide scrollbar */
-  overflow-x: hidden;
-}
-
 .loading {
   padding: 50px;
   font-size: 36px;

@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from connection.mbard import MBartTranslator
+from translation.mbard import MBartTranslator
 
 # Initialize the Flask app
 app = Flask(__name__)
@@ -16,6 +16,9 @@ def translate():
     source_lang = data.get('source_lang')
     target_lang = data.get('target_lang')
     
+    if not text or not source_lang or not target_lang:
+        return jsonify({"error":"Missing text, source_lang, or target_lang"}),400
+
     # Use the MBartTranslator class to translate
     translated_text = translator.translate(text, source_lang, target_lang)
     

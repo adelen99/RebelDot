@@ -8,8 +8,7 @@ import {
 import { auth, db } from "../../lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import upload from "../../lib/upload";
-import countries from "i18n-iso-countries";
-import enLocale from "i18n-iso-countries/langs/en.json";
+import axios from "axios";
 
 export default function Login() {
   const [avatar, setAvatar] = useState({
@@ -17,21 +16,28 @@ export default function Login() {
     url: "",
   });
   const [loading, setLoading] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState("");
-  const [countryOptions, setCountryOptions] = useState({});
+  const [languageOptions, setLanguageOptions] = useState([]); // State for languages
+  const [selectedLanguage, setSelectedLanguage] = useState(""); // State for selected language
   const [isRegistering, setIsRegistering] = useState(false); // Toggle between Sign In and Sign Up
 
   useEffect(() => {
-    // Register the locale for country names (in English)
-    countries.registerLocale(enLocale);
+    // Fetch languages from the API
+    const fetchLanguages = async () => {
+      try {
+        const response = await axios.get("http://127.0.0.1:5000/languages");
+        const { languages } = response.data; // Destructure to get the languages array
+        setLanguageOptions(languages); // Save languages in the state
+      } catch (error) {
+        console.error("Error fetching languages:", error);
+      }
+    };
 
-    // Fetch country names in English
-    const countryNames = countries.getNames("en", { select: "official" });
-    setCountryOptions(countryNames); // Save the country options in the state
+    // Call the function to fetch languages
+    fetchLanguages();
   }, []);
 
-  const handleCountryChange = (e) => {
-    setSelectedCountry(e.target.value);
+  const handleLanguageChange = (e) => {
+    setSelectedLanguage(e.target.value); // Update selected language state
   };
 
   const handleAvatar = (e) => {
@@ -57,7 +63,7 @@ export default function Login() {
         email,
         avatar: imgUrl,
         id: res.user.uid,
-        country: selectedCountry, // Add selected country to Firestore
+        language: selectedLanguage, // Add selected language to Firestore
         blocked: [],
       });
       await setDoc(doc(db, "userchats", res.user.uid), {
@@ -82,19 +88,17 @@ export default function Login() {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      toast.success("You are logged in!");
     } catch (error) {
       console.log(error);
       toast.error(error.message);
     } finally {
       setLoading(false);
     }
-
-    toast.success("You are logged in!");
   };
 
   return (
     <div className='login'>
-      {/* Conditionally render based on isRegistering state */}
       <div className='item'>
         {isRegistering ? (
           <>
@@ -114,22 +118,20 @@ export default function Login() {
               <input type='text' placeholder='Email' name='email' />
               <input type='password' placeholder='Password' name='password' />
 
-              {/* Country Select Dropdown */}
+              {/* Language Select Dropdown */}
               <select
-                name='country'
-                value={selectedCountry}
-                onChange={handleCountryChange}
+                name='language'
+                value={selectedLanguage}
+                onChange={handleLanguageChange}
                 required>
                 <option value='' disabled>
-                  -- Select Your Country --
+                  -- Select Your Language --
                 </option>
-                {Object.entries(countryOptions).map(
-                  ([countryCode, countryName]) => (
-                    <option key={countryCode} value={countryCode}>
-                      {countryName}
-                    </option>
-                  )
-                )}
+                {languageOptions.map(({ code, name }) => (
+                  <option key={code} value={code}>
+                    {name} {/* Display language name */}
+                  </option>
+                ))}
               </select>
 
               <button disabled={loading}>
