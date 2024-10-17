@@ -1,9 +1,14 @@
 import logging
-from transformers import MBartForConditionalGeneration, MBart50TokenizerFast, MBart50Tokenizer
+from transformers import (
+    MBartForConditionalGeneration,
+    MBart50TokenizerFast,
+    MBart50Tokenizer,
+)
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 class MBartTranslator:
     def __init__(self, model_name="facebook/mbart-large-50-many-to-many-mmt"):
@@ -27,7 +32,7 @@ class MBartTranslator:
     def translate(self, text, source_lang, target_lang, max_length=40, num_beams=4):
         """
         Translates text from source_lang to target_lang using mBART.
-        
+
         Parameters:
             - text (str): The input text to translate.
             - source_lang (str): Source language code (e.g., "en_XX" for English).
@@ -54,7 +59,7 @@ class MBartTranslator:
                 forced_bos_token_id=forced_bos_token_id,
                 max_length=max_length,
                 num_beams=num_beams,
-                early_stopping=True
+                early_stopping=True,
             )
             # Decode the output
             translated_text = self.tokenizer.decode(output[0], skip_special_tokens=True)
@@ -69,6 +74,7 @@ class MBartTranslator:
         Returns a list of supported languages for mBART with their codes.
         """
         return list(self.tokenizer.lang_code_to_id.keys())
+
 
 # Example usage:
 # translator = MBartTranslator()
