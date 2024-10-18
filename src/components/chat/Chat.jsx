@@ -12,13 +12,17 @@ import { db } from "../../lib/firebase";
 import { useChatStore } from "../../lib/chatStore";
 import { useUserStore } from "../../lib/userStore";
 import upload from "../../lib/upload";
-import axios from "axios"; // Import axios
+import axios from "axios";
 
 export default function Chat() {
   const [open, setOpen] = useState(false);
   const [chat, setChat] = useState();
   const [text, setText] = useState("");
   const [img, setImg] = useState({ file: null, url: "" });
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [recording, setRecording] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
 
   const { chatId, user, isCurrentUserBlocked, isReceiverBlocked } =
     useChatStore();
@@ -51,23 +55,29 @@ export default function Chat() {
     }
   };
   const handleSend = async () => {
-    if (text === "") return;
+    if (text === "" && !img.file && !audioUrl) return;
 
     let imgUrl = null;
+    let audioFileUrl = null;
 
     try {
       if (img.file) {
         imgUrl = await upload(img.file);
       }
 
-      // Prepare message payload
+      if (audioUrl) {
+        const audioBlob = await fetch(audioUrl).then((r) => r.blob());
+        audioFileUrl = await upload(audioBlob);
+      }
+
       const messagePayload = {
         senderId: currentUser.id,
         receiverId: user.id,
-        text: text, // Original text
-        source_lang: currentUser.language, // User's language
-        target_lang: user.language, // Receiver's language
+        text: text,
+        source_lang: currentUser.language,
+        target_lang: user.language,
         ...(imgUrl && { img: imgUrl }),
+        ...(audioFileUrl && { audio: audioFileUrl }),
         createdAt: new Date(),
       };
 
@@ -85,10 +95,11 @@ export default function Chat() {
         senderId: currentUser.id,
         receiverId: user.id,
         text:
-          currentUser.id === messagePayload.senderId ? text : translatedText, // Original for sender, translated for receiver
+          currentUser.id === messagePayload.senderId ? text : translatedText,
         translatedText:
-          currentUser.id === messagePayload.senderId ? translatedText : text, // Store translated text as well for reference
-        img: imgUrl || null, // Include image if it exists
+          currentUser.id === messagePayload.senderId ? translatedText : text,
+        img: imgUrl || null,
+        audio: audioFileUrl || null,
         createdAt: new Date(),
       };
 
@@ -128,6 +139,42 @@ export default function Chat() {
       // Reset image and text after sending the message
       setImg({ file: null, url: "" });
       setText("");
+      setAudioUrl(null);
+    }
+  };
+
+  // Audio Recording Functions
+  const startRecording = async () => {
+    audioChunksRef.current = [];
+    setRecording(true);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorderRef.current.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: "audio/mpeg",
+        });
+        const audioURL = URL.createObjectURL(audioBlob);
+        setAudioUrl(audioURL);
+        setRecording(false);
+      };
+
+      mediaRecorderRef.current.start();
+    } catch (error) {
+      console.error("Error accessing the microphone:", error);
+      setRecording(false);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
     }
   };
 
@@ -157,12 +204,15 @@ export default function Chat() {
             <div className='texts'>
               {message.img && <img src={message.img} alt='messageImage' />}
               <p>
-                {
-                  message.senderId === currentUser.id
-                    ? message.text // Display original text for the sender
-                    : message.translatedText // Display translated text for the receiver
-                }
+                {message.senderId === currentUser.id
+                  ? message.text
+                  : message.translatedText}
               </p>
+              {message.audio && (
+                <audio controls src={message.audio}>
+                  Your browser does not support the audio element.
+                </audio>
+              )}
             </div>
           </div>
         ))}
@@ -188,7 +238,12 @@ export default function Chat() {
             onChange={handleImage}
           />
           <img src='./camera.png' alt='' />
-          <img src='./mic.png' alt='' />
+          <img
+            src={recording ? "./mic-recording.png" : "./mic.png"}
+            alt=''
+            onClick={recording ? stopRecording : startRecording}
+            className={recording ? "recording" : ""}
+          />
         </div>
         <input
           type='text'
