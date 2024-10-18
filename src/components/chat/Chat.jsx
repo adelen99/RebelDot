@@ -28,7 +28,8 @@ export default function Chat() {
   const { chatId, user, isCurrentUserBlocked, isReceiverBlocked } =
     useChatStore();
   const { currentUser } = useUserStore();
-  const [audioFileUrl, setAudioFileUrl] = useState(null);
+  //const [audioFileUrl, setAudioFileUrl] = useState(null);
+  let audioFileUrl = null;
 
   const endRef = useRef(null);
 
@@ -71,8 +72,7 @@ export default function Chat() {
 
       if (audioUrl && currentUser) {
         const audioBlob = await fetch(audioUrl).then((r) => r.blob());
-        const savedAudioFileUrl = await uploadAudio(audioBlob);
-        setAudioFileUrl(savedAudioFileUrl);
+        audioFileUrl = await uploadAudio(audioBlob);
 
         const formData = new FormData();
 
@@ -111,8 +111,8 @@ export default function Chat() {
             currentUser.id === messagePayload.senderId ? translatedText : text,
           translatedText:
             currentUser.id === messagePayload.senderId ? text : translatedText,
-          img: imgUrl || null,
-          audio: audioFileUrl || null,
+          // img: imgUrl || null,
+          // audio: audioFileUrl || null,
           createdAt: new Date(),
         };
       }
@@ -234,6 +234,11 @@ export default function Chat() {
                   Your browser does not support the audio element.
                 </audio>
               )}
+              {/* {message.audio && (
+                <audio controls src={message.audio}>
+                  Your browser does not support the audio element.
+                </audio>
+              )} */}
             </div>
           </div>
         ))}
