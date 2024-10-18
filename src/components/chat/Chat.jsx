@@ -66,49 +66,62 @@ export default function Chat() {
         imgUrl = await upload(img.file);
       }
 
-      if (audioUrl) {
+      let messagePayload = {};
+      let messageForFirestore = {};
+
+      if (audioUrl && currentUser) {
         const audioBlob = await fetch(audioUrl).then((r) => r.blob());
         audioFileUrl = await uploadAudio(audioBlob);
+
+        const formData = new FormData();
+
+        formData.append("file", audioFileUrl);
+        formData.append("source_lang", currentUser.language);
+        formData.append("target_lang", user.language);
+        formData.append("receiver_id", user.id);
+        formData.append("sender_id", currentUser.id);
+        formData.append("chat_id", chatId);
+
+        // Send the message to the backend for translation
+        const response = await axios.post(
+          "http://127.0.0.1:5000/translate_audio",
+          formData
+        );
+      } else {
+        messagePayload = {
+          text: text,
+          source_lang: currentUser.language,
+          target_lang: user.language,
+        };
+
+        // Send the message to the backend for translation
+        const response = await axios.post(
+          "http://127.0.0.1:5000/translate",
+          messagePayload
+        );
+
+        const translatedText = response.data.translated_text; // Extract the translated text
+
+        // Construct message object for Firestore
+        messageForFirestore = {
+          senderId: currentUser.id,
+          receiverId: user.id,
+          text:
+            currentUser.id === messagePayload.senderId ? translatedText : text,
+          translatedText:
+            currentUser.id === messagePayload.senderId ? text : translatedText,
+          img: imgUrl || null,
+          audio: audioFileUrl || null,
+          createdAt: new Date(),
+        };
       }
-      console.log(audioFileUrl);
-
-      const messagePayload = {
-        senderId: currentUser.id,
-        receiverId: user.id,
-        text: text,
-        source_lang: currentUser.language,
-        target_lang: user.language,
-        ...(imgUrl && { img: imgUrl }),
-        ...(audioFileUrl && { audio: audioFileUrl }),
-        createdAt: new Date(),
-      };
-
-      debugger;
-      // Send the message to the backend for translation
-      const response = await axios.post(
-        "http://127.0.0.1:5000/translate",
-        messagePayload
-      );
-
-      const translatedText = response.data.translated_text; // Extract the translated text
-
-      // Construct message object for Firestore
-      const messageForFirestore = {
-        senderId: currentUser.id,
-        receiverId: user.id,
-        text:
-          currentUser.id === messagePayload.senderId ? text : translatedText,
-        translatedText:
-          currentUser.id === messagePayload.senderId ? translatedText : text,
-        img: imgUrl || null,
-        audio: audioFileUrl || null,
-        createdAt: new Date(),
-      };
 
       // Update Firestore with the new message
-      await updateDoc(doc(db, "chats", chatId), {
-        messages: arrayUnion(messageForFirestore),
-      });
+      if (!audioUrl) {
+        await updateDoc(doc(db, "chats", chatId), {
+          messages: arrayUnion(messageForFirestore),
+        });
+      }
 
       const userIDs = [currentUser.id, user.id];
 

@@ -16,7 +16,6 @@ export default function Login() {
     url: "",
   });
   const [loading, setLoading] = useState(false);
-  const [languageOptions, setLanguageOptions] = useState([]); // State for languages
   const [selectedLanguage, setSelectedLanguage] = useState(""); // State for selected language
   const [isRegistering, setIsRegistering] = useState(false); // Toggle between Sign In and Sign Up
 
