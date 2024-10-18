@@ -38,7 +38,7 @@ export default function Detail() {
       <div className='user'>
         <img src={user?.avatar || "./avatar.png"} alt='' />
         <h2>{user?.username}</h2>
-        <p>Lorem ipsum dolor sit amet.</p>
+        <p className='green-bullet'></p>
       </div>
       <div className='info'>
         <div className='option'>

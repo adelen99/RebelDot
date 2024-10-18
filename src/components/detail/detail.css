@@ -8,6 +8,15 @@
     align-items: center;
     gap: 10px;
     border-bottom: 1px solid #dddddd35;
+
+    .green-bullet {
+      width: 12px; /* Small size */
+      height: 12px; /* Circular shape */
+      background-color: #4caf50; /* Green color */
+      border-radius: 50%; /* Perfect circle */
+      box-shadow: 0px 0px 5px rgba(0, 255, 0, 0.5); /* Soft glow */
+    }
+
     img {
       width: 100px;
       height: 100px;

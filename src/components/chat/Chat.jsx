@@ -201,7 +201,7 @@ export default function Chat() {
           <img src={user?.avatar || "./avatar.png"} alt='' />
           <div className='texts'>
             <span>{user?.username}</span>
-            <p>Lorem ipsum, dolor sit amet.</p>
+            <p>online</p>
           </div>
         </div>
         <div className='icons'>
@@ -265,7 +265,7 @@ export default function Chat() {
           />
           <img src='./camera.png' alt='' />
           <img
-            src={recording ? "./mic-recording.png" : "./mic.png"}
+            src={recording ? "./red-mic.png" : "./mic.png"}
             alt=''
             onClick={recording ? stopRecording : startRecording}
             className={recording ? "recording" : ""}
