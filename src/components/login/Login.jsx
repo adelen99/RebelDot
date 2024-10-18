@@ -20,21 +20,19 @@ export default function Login() {
   const [selectedLanguage, setSelectedLanguage] = useState(""); // State for selected language
   const [isRegistering, setIsRegistering] = useState(false); // Toggle between Sign In and Sign Up
 
-  useEffect(() => {
-    // Fetch languages from the API
-    const fetchLanguages = async () => {
-      try {
-        const response = await axios.get("http://127.0.0.1:5000/languages");
-        const { languages } = response.data; // Destructure to get the languages array
-        setLanguageOptions(languages); // Save languages in the state
-      } catch (error) {
-        console.error("Error fetching languages:", error);
-      }
-    };
-
-    // Call the function to fetch languages
-    fetchLanguages();
-  }, []);
+  const languages = [
+    { code: "en_XX", name: "English" },
+    { code: "fr_XX", name: "French" },
+    { code: "es_XX", name: "Spanish" },
+    { code: "de_DE", name: "German" },
+    { code: "it_IT", name: "Italian" },
+    { code: "pt_XX", name: "Portuguese" },
+    { code: "ru_RU", name: "Russian" },
+    { code: "zh_CN", name: "Chinese" },
+    { code: "ja_XX", name: "Japanese" },
+    { code: "ko_KR", name: "Korean" },
+    { code: "ro_RO", name: "Romanian" },
+  ];
 
   const handleLanguageChange = (e) => {
     setSelectedLanguage(e.target.value); // Update selected language state
@@ -127,8 +125,8 @@ export default function Login() {
                 <option value='' disabled>
                   -- Select Your Language --
                 </option>
-                {languageOptions.map(({ code, name }) => (
-                  <option key={code} value={code}>
+                {languages.map(({ code, name }) => (
+                  <option key={code} value={name}>
                     {name} {/* Display language name */}
                   </option>
                 ))}

@@ -71,11 +71,13 @@ export default function Chat() {
         createdAt: new Date(),
       };
 
+      debugger;
       // Send the message to the backend for translation
       const response = await axios.post(
         "http://127.0.0.1:5000/translate",
         messagePayload
       );
+
       const translatedText = response.data.translated_text; // Extract the translated text
 
       // Construct message object for Firestore
