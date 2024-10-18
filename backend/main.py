@@ -1,9 +1,12 @@
 from flask import Flask, request, send_file, jsonify
 from pathlib import Path
+
+from flask_cors import CORS
 from translation.wisper import speach_to_text, text_to_speach
 from translation.gpt import translate_text
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route("/translate", methods=["POST"])
 def translate():
