@@ -12,6 +12,7 @@ import { db } from "../../lib/firebase";
 import { useChatStore } from "../../lib/chatStore";
 import { useUserStore } from "../../lib/userStore";
 import upload from "../../lib/upload";
+import uploadAudio from "../../lib/uploadAudio";
 import axios from "axios";
 
 export default function Chat() {
@@ -67,8 +68,9 @@ export default function Chat() {
 
       if (audioUrl) {
         const audioBlob = await fetch(audioUrl).then((r) => r.blob());
-        audioFileUrl = await upload(audioBlob);
+        audioFileUrl = await uploadAudio(audioBlob);
       }
+      console.log(audioFileUrl);
 
       const messagePayload = {
         senderId: currentUser.id,
