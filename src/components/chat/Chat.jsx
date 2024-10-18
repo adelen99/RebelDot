@@ -28,6 +28,7 @@ export default function Chat() {
   const { chatId, user, isCurrentUserBlocked, isReceiverBlocked } =
     useChatStore();
   const { currentUser } = useUserStore();
+  const [audioFileUrl, setAudioFileUrl] = useState(null);
 
   const endRef = useRef(null);
 
@@ -59,7 +60,6 @@ export default function Chat() {
     if (text === "" && !img.file && !audioUrl) return;
 
     let imgUrl = null;
-    let audioFileUrl = null;
 
     try {
       if (img.file) {
@@ -71,7 +71,8 @@ export default function Chat() {
 
       if (audioUrl && currentUser) {
         const audioBlob = await fetch(audioUrl).then((r) => r.blob());
-        audioFileUrl = await uploadAudio(audioBlob);
+        const savedAudioFileUrl = await uploadAudio(audioBlob);
+        setAudioFileUrl(savedAudioFileUrl);
 
         const formData = new FormData();
 
@@ -223,7 +224,12 @@ export default function Chat() {
                   ? message.text
                   : message.translatedText}
               </p>
-              {message.audio && (
+              {message.audio && message.senderId === currentUser.id && (
+                <audio controls src={audioFileUrl}>
+                  Your browser does not support the audio element.
+                </audio>
+              )}
+              {message.audio && message.senderId === user.id && (
                 <audio controls src={message.audio}>
                   Your browser does not support the audio element.
                 </audio>
